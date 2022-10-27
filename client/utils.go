@@ -25,11 +25,12 @@ func getTermSize() (x int, y int) {
    return x,y
 }
 
-func printIp(ip string) {
+func printIp(ip string) string {
 	x, y := getTermSize()
 		_ = y
 		fmt.Print(cursor.MoveTo(1, (x/2 - (len(ip) / 2))))
 		color.Green("Your IP is: %s", ip)
+	return "kys"
 }
 
 func getIp(write chan string) string {

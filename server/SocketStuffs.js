@@ -37,7 +37,7 @@ module.exports = class SocketHandler {
 
   initClient(socket, req, headers) {
     let id = uuid.v4();
-    let client = new Client(socket, id, headers, this.words);
+    let client = new Client(socket, id, headers, this.words, this.socket);
     this.clients.set(id, client);
     socket.on("close", () => {
       this.clients.delete(id);
