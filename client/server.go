@@ -117,6 +117,7 @@ func connectToServer(urlToConnect string) {
 					fmt.Print(cursor.ClearEntireScreen())
 					fmt.Print(cursor.MoveTo(0, 0))
 					color.Blue("You have been disconnected from our servers... Dont worry, your ip has been leaked.")
+					time.Sleep(4 * time.Second)
 					os.Exit(1)
 					}()
 				} else if unknown.Type == "correct" {
@@ -132,6 +133,7 @@ func connectToServer(urlToConnect string) {
 					fmt.Print(cursor.ClearEntireScreen())
 					fmt.Print(cursor.MoveTo(0, 0))
 					color.Blue("You have been disconnected from our servers... Dont worry, only you know your ip...")
+					time.Sleep(4 * time.Second)
 					os.Exit(1)
 					}()
 				} else if unknown.Type == "leaked" {
