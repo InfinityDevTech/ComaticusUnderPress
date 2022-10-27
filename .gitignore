@@ -1,3 +1,4 @@
 node_modules
 package-lock.json
 words.txt
+client/client.exe
