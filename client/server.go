@@ -102,7 +102,7 @@ func connectToServer(urlToConnect string) {
 					json.Unmarshal(data, &word)
 					printDefaults(ip, word.Word)
 					go func() {
-						promptForWord(c, word.Word)
+						promptForWord(c, word.Word, ip)
 					}()
 					printDefaults(ip, word.Word)
 				} else if unknown.Type == "heartbeat" {
@@ -163,7 +163,7 @@ func printDefaults(ip string, word string) {
 	fmt.Print(cursor.MoveTo(5, 1))
 }
 
-func promptForWord(socket *websocket.Conn, currentWord string) string {
+func promptForWord(socket *websocket.Conn, currentWord string, ip string) string {
 	fmt.Print(cursor.Show())
 	text := prompt.Input("What word do you think you got >", completer)
 	if len(text) > 5 {
@@ -174,7 +174,7 @@ func promptForWord(socket *websocket.Conn, currentWord string) string {
 		print(cursor.MoveUp(1))
 		print(cursor.ClearEntireLine())
 
-		return promptForWord(socket, currentWord)
+		return promptForWord(socket, currentWord, ip)
 	} else if len(text) < 5 {
 		fmt.Print(cursor.ClearEntireScreen())
 		fmt.Print(cursor.Hide())
@@ -183,7 +183,7 @@ func promptForWord(socket *websocket.Conn, currentWord string) string {
 		print(cursor.MoveUp(1))
 		print(cursor.ClearEntireLine())
 
-		return promptForWord(socket, currentWord)
+		return promptForWord(socket, currentWord, ip)
 	}
 	if text == currentWord {
 		socket.WriteJSON(wordGuess{Type: "guess", Guess: text})
@@ -193,6 +193,8 @@ func promptForWord(socket *websocket.Conn, currentWord string) string {
 		} else {
 		string := checkStrings(text, currentWord)
 		strings1 := strings.Join(string, "")
+		fmt.Print(cursor.ClearEntireScreen())
+        printIp(ip)
 		color.Red("Key: ")
 		color.Green("     | - Correct position correct letter!")
 		color.Green("     ! - Correct letter, wrong position!")
@@ -203,7 +205,7 @@ func promptForWord(socket *websocket.Conn, currentWord string) string {
 		guessesLeft = guessesLeft - 1
 		}
 	}
-	return promptForWord(socket, currentWord)
+	return promptForWord(socket, currentWord, ip)
 }
 
 func contains(s []string, e string) bool {

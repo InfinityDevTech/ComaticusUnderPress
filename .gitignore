@@ -3,3 +3,5 @@ package-lock.json
 words.txt
 client/client.exe
 client/Irdle-Client.exe
+client/server.go
+client/Irdle-Client.exe.exe
