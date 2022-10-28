@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -16,6 +17,8 @@ import (
 	"github.com/gen2brain/beeep"
 	"github.com/gorilla/websocket"
 )
+
+var guessesLeft int = 10
 
 type baseType struct {
 	Type string `json:"type"`
@@ -28,11 +31,11 @@ type wordResp struct {
 
 type leaked struct {
 	Type string `json:"type"`
-	Ip string `json:"ip"`
+	Ip   string `json:"ip"`
 }
 
 type wordGuess struct {
-	Type string
+	Type  string
 	Guess string
 }
 
@@ -83,7 +86,6 @@ func connectToServer(urlToConnect string) {
 					fmt.Println("write close:", err)
 					return
 				}
-				time.Sleep(1)
 				return
 			case <-ticker.C:
 				if err != nil {
@@ -100,42 +102,42 @@ func connectToServer(urlToConnect string) {
 					json.Unmarshal(data, &word)
 					printDefaults(ip, word.Word)
 					go func() {
-					promptForWord(c)
+						promptForWord(c, word.Word)
 					}()
 					printDefaults(ip, word.Word)
-					} else if unknown.Type == "heartbeat" {
+				} else if unknown.Type == "heartbeat" {
 
 				} else if unknown.Type == "incorrect" {
 					go func() {
-                        fmt.Print(cursor.ClearEntireScreen())
-					fmt.Print(cursor.MoveTo(0, 0))
-					color.Blue("Your word was incorrect...")
-					time.Sleep(4 * time.Second)
-					fmt.Print(cursor.ClearEntireScreen())
-					fmt.Print(cursor.MoveTo(0, 0))
-					color.Green("Your IP is: %s", ip)
-					time.Sleep(4 * time.Second)
-					fmt.Print(cursor.ClearEntireScreen())
-					fmt.Print(cursor.MoveTo(0, 0))
-					color.Blue("You have been disconnected from our servers... Dont worry, your ip has been leaked.")
-					time.Sleep(4 * time.Second)
-					os.Exit(1)
+						fmt.Print(cursor.ClearEntireScreen())
+						fmt.Print(cursor.MoveTo(0, 0))
+						color.Blue("Your word was incorrect...")
+						time.Sleep(4 * time.Second)
+						fmt.Print(cursor.ClearEntireScreen())
+						fmt.Print(cursor.MoveTo(0, 0))
+						color.Green("Your IP is: %s", ip)
+						time.Sleep(4 * time.Second)
+						fmt.Print(cursor.ClearEntireScreen())
+						fmt.Print(cursor.MoveTo(0, 0))
+						color.Blue("You have been disconnected from our servers... Dont worry, your ip has been leaked.")
+						time.Sleep(4 * time.Second)
+						os.Exit(1)
 					}()
 				} else if unknown.Type == "correct" {
 					go func() {
-                        fmt.Print(cursor.ClearEntireScreen())
-					fmt.Print(cursor.MoveTo(0, 0))
-					color.Blue("You got it correct...")
-					time.Sleep(4 * time.Second)
-					fmt.Print(cursor.ClearEntireScreen())
-					fmt.Print(cursor.MoveTo(0, 0))
-					color.Green("Your IP is: %s", ip)
-					time.Sleep(4 * time.Second)
-					fmt.Print(cursor.ClearEntireScreen())
-					fmt.Print(cursor.MoveTo(0, 0))
-					color.Blue("You have been disconnected from our servers... Dont worry, only you know your ip...")
-					time.Sleep(4 * time.Second)
-					os.Exit(1)
+						fmt.Print(cursor.ClearEntireScreen())
+						fmt.Print(cursor.MoveTo(0, 0))
+						color.Blue("You got it correct...")
+						time.Sleep(4 * time.Second)
+						fmt.Print(cursor.ClearEntireScreen())
+						fmt.Print(cursor.MoveTo(0, 0))
+						color.Green("Your IP is: %s", ip)
+						time.Sleep(4 * time.Second)
+						fmt.Print(cursor.ClearEntireScreen())
+						fmt.Print(cursor.MoveTo(0, 0))
+						color.Blue("You have been disconnected from our servers... Dont worry, only you know your ip...")
+						time.Sleep(4 * time.Second)
+						os.Exit(1)
 					}()
 				} else if unknown.Type == "leaked" {
 					var leaked leaked
@@ -155,16 +157,15 @@ func connectToServer(urlToConnect string) {
 func printDefaults(ip string, word string) {
 	fmt.Print(cursor.ClearEntireScreen())
 	fmt.Print(cursor.MoveTo(0, 0))
-	color.Green("Your word is: %s", word)
+	//color.Green("Your word is: %s", word)
 	fmt.Print(cursor.Show())
 	printIp(ip)
 	fmt.Print(cursor.MoveTo(5, 1))
 }
 
-func promptForWord(socket *websocket.Conn) string {
+func promptForWord(socket *websocket.Conn, currentWord string) string {
 	fmt.Print(cursor.Show())
 	text := prompt.Input("What word do you think you got >", completer)
-	fmt.Println(len(text))
 	if len(text) > 5 {
 		fmt.Print(cursor.ClearEntireScreen())
 		fmt.Print(cursor.Hide())
@@ -173,7 +174,7 @@ func promptForWord(socket *websocket.Conn) string {
 		print(cursor.MoveUp(1))
 		print(cursor.ClearEntireLine())
 
-		return promptForWord(socket)
+		return promptForWord(socket, currentWord)
 	} else if len(text) < 5 {
 		fmt.Print(cursor.ClearEntireScreen())
 		fmt.Print(cursor.Hide())
@@ -182,19 +183,55 @@ func promptForWord(socket *websocket.Conn) string {
 		print(cursor.MoveUp(1))
 		print(cursor.ClearEntireLine())
 
-		return promptForWord(socket)
+		return promptForWord(socket, currentWord)
 	}
-	message, err := json.Marshal(wordGuess{Guess: text, Type: "guess"})
-	if err != nil {
-		color.Red("Error sending word to server... Im sorry.")
-		os.Exit(1)
+	if text == currentWord {
+		socket.WriteJSON(wordGuess{Type: "guess", Guess: text})
+	} else {
+		if guessesLeft - 1 == 0 {
+			socket.WriteJSON(wordGuess{Type: "guess", Guess: text})
+		} else {
+		string := checkStrings(text, currentWord)
+		strings1 := strings.Join(string, "")
+		color.Red("Key: ")
+		color.Green("     | - Correct position correct letter!")
+		color.Green("     ! - Correct letter, wrong position!")
+		color.Green("     - - Incorrect letter!")
+		fmt.Print(cursor.MoveTo(6, 0))
+		color.Blue(strings1)
+		color.Blue(text)
+		guessesLeft = guessesLeft - 1
+		}
 	}
-	err2 := socket.WriteMessage(websocket.TextMessage, message)
-	if err2 != nil {
-		color.Red("Error sending word to server... Im sorry.")
-		os.Exit(1)
+	return promptForWord(socket, currentWord)
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
 	}
-	return text
+	return false
+}
+
+func checkStrings(string1 string, string2 string) []string {
+	fmt.Println(string1)
+	fmt.Println(string2)
+	word1Letters := strings.Split(string1, "")
+	correctLetters := strings.Split(string2, "")
+	var correctPos []string
+
+	for i := 0; i < len(word1Letters); i++ {
+		if word1Letters[i] == correctLetters[i] {
+			correctPos = append(correctPos, "|")
+		} else if contains(correctLetters, word1Letters[i]) {
+			correctPos = append(correctPos, "!")
+		} else {
+			correctPos = append(correctPos, "-")
+		}
+	}
+	return correctPos
 }
 
 func completer(d prompt.Document) []prompt.Suggest {

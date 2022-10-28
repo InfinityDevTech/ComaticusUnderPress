@@ -11,7 +11,7 @@ module.exports = class SocketHandler{
         this.words = words
         this.hasWord = false
         this.pickWord()
-        setInterval(() => {client.send(JSON.stringify({type: 'heartbeat'}))}, 2000)
+        setInterval(() => {client.send(JSON.stringify({type: 'heartbeat'}))}, 1000)
         console.log(`New client connected | ID: ${this.id} | IP: ${this.ip} | Word: ${this.curWord}`)
         this.checkGuess()
     }
