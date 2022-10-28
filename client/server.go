@@ -40,6 +40,7 @@ var IpRes chan string = make(chan string)
 
 func connectToServer(urlToConnect string) {
 	u := url.URL{Scheme: "ws", Host: urlToConnect}
+	fmt.Print(cursor.Hide())
 	fmt.Print(cursor.ClearEntireScreen())
 	fmt.Print(cursor.MoveTo(0, 0))
 	color.Red("Connecting you to our servers...")
@@ -161,24 +162,27 @@ func printDefaults(ip string, word string) {
 }
 
 func promptForWord(socket *websocket.Conn) string {
+	fmt.Print(cursor.Show())
 	text := prompt.Input("What word do you think you got >", completer)
 	fmt.Println(len(text))
 	if len(text) > 5 {
 		fmt.Print(cursor.ClearEntireScreen())
+		fmt.Print(cursor.Hide())
 		color.Red("Your word is too long! Please try again.")
 		time.Sleep(2 * time.Second)
 		print(cursor.MoveUp(1))
 		print(cursor.ClearEntireLine())
 
-		promptForWord(socket)
+		return promptForWord(socket)
 	} else if len(text) < 5 {
 		fmt.Print(cursor.ClearEntireScreen())
+		fmt.Print(cursor.Hide())
 		color.Red("Your word is too short! Please try again.")
 		time.Sleep(2 * time.Second)
 		print(cursor.MoveUp(1))
 		print(cursor.ClearEntireLine())
 
-		promptForWord(socket)
+		return promptForWord(socket)
 	}
 	message, err := json.Marshal(wordGuess{Guess: text, Type: "guess"})
 	if err != nil {
